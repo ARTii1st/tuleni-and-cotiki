@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="apple-touch-icon" sizes="180x180" href="icon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icon/favicon-16x16.png">
+    <link rel="manifest" href="icon/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>artur</title>
+    <title>COTIKI&TULENI</title>
     <style>
         body {
             height: 100%;
@@ -12,12 +16,13 @@
             background: linear-gradient(to right, #ff758c, #7c0f3d);
             font-family: Arial, sans-serif;
             line-height: 1.6;
+            user-select: none;
         }
         
         .text-block {
             margin: 50px auto;
             padding: 20px;
-            background-color: rgba(245, 245, 245, 0.9);
+            background-color: rgba(221, 223, 221, 0.9);
             border-radius: 10px;
             max-width: 900px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
@@ -29,18 +34,41 @@
             justify-content: space-around;
             gap: 15px;
             margin: 20px 0;
+            min-height: 250px;
+            padding: 15px;
+            background-color: rgba(255,255,255,0.3);
+            border-radius: 10px;
         }
         
         .animal-image {
             width: 280px;
-            height: auto;
+            height: 200px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            object-fit: cover;
+            cursor: grab;
+            position: relative;
+            z-index: 1;
         }
         
         .animal-image:hover {
             transform: scale(1.03);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .animal-image.dragging {
+            opacity: 0.8;
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            z-index: 10;
+            cursor: grabbing;
+        }
+        
+        .drop-indicator {
+            border: 2px dashed #7c0f3d;
+            background-color: rgba(124, 15, 61, 0.1);
+            border-radius: 10px;
         }
         
         h2 {
@@ -59,6 +87,73 @@
             clear: both;
             display: table;
         }
+        
+        .round-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 15px 30px;
+            background-color: #c71660;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: fit-content;
+        }
+        
+        .round-btn:hover {
+            background-color: #9a1a4d;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .round-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .upload-container {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        
+        .file-label:hover {
+            background-color: #3e8e41;
+        }
+        
+        .preview-image {
+            max-width: 280px;
+            max-height: 200px;
+            margin: 10px auto;
+            display: block;
+            border-radius: 10px;
+        }
+        
+        .btn-seal {
+            background-color: #c71660;
+        }
+        
+        .btn-seal:hover {
+            background-color: #9a1a4d;
+        }
     </style>
 </head>
 <body>
@@ -69,10 +164,19 @@
             <p>Заселяют прибрежные воды Атлантического и Тихого океанов, а также Балтийского и Северного морей. Обыкновенные тюлени бывают коричневого, рыжеватого или серого цвета и имеют характерные V-образные ноздри. Взрослые особи достигают 1,85 м в длину и 135 кг массы.</p>
         </div>
         
-        <div class="animal-images">
-            <img src="seal/sealwater.jpg" alt="Тюлень спинер" class="animal-image">
-            <img src="seal/sealfranche.jpg" alt="Тюлень французик" class="animal-image">
-            <img src="seal/5053425d1288a27f7425cf0e04595a30.jpg" alt="Тюлень прифлещ" class="animal-image">
+        <div class="animal-images" id="sealsContainer">
+            <img src="seal/sealwater.jpg" alt="Тюлень спинер" class="animal-image" draggable="true">
+            <img src="seal/sealfranche.jpg" alt="Тюлень французик" class="animal-image" draggable="true">
+            <img src="seal/5053425d1288a27f7425cf0e04595a30.jpg" alt="Тюлень прифлещ" class="animal-image" draggable="true">
+        </div>
+        
+        <button class="round-btn btn-seal" id="addSealBtn">Добавить тюленчика</button>
+        
+        <div class="upload-container" id="sealUploadContainer">
+            <label for="sealFileInput" class="file-label">Выберите изображение тюленчика</label>
+            <input type="file" id="sealFileInput" class="file-input" accept="image/*">
+            <img id="sealImagePreview" class="preview-image" style="display: none;">
+            <button class="round-btn btn-seal" id="uploadSealBtn" style="display: none;">Загрузить тюленчика</button>
         </div>
         
         <div class="cont">
@@ -83,14 +187,175 @@
         <h2>Котики</h2>
         <p>Ко́шка (лат. Felis catus) — домашнее животное, одно из наиболее популярных (наряду с собакой) «животных-компаньонов».
         <p>С точки зрения научной систематики, домашняя кошка — млекопитающее семейства кошачьих отряда хищных. Одни исследователи рассматривают домашнюю кошку как подвид дикой кошки, другие — как отдельный биологический вид.</p>
-        <div class="animal-images">
-            <img src="cotiki/3b45ecc93d898cf489510016293aea00.jpg" alt="Котик два" class="animal-image">
-            <img src="cotiki/8481ffb726a454888a12f2391c121f6d.jpg" alt="Котик три" class="animal-image">
-            <img src="cotiki/ec8f3c35bcba82597d0328605f0812ba.jpg" alt="Котик пиятяс два" class="animal-image">
+        <div class="animal-images" id="catsContainer">
+            <img src="cotiki/3b45ecc93d898cf489510016293aea00.jpg" alt="Котик два" class="animal-image" draggable="true">
+            <img src="cotiki/8481ffb726a454888a12f2391c121f6d.jpg" alt="Котик три" class="animal-image" draggable="true">
+            <img src="cotiki/ec8f3c35bcba82597d0328605f0812ba.jpg" alt="Котик пиятяс два" class="animal-image" draggable="true">
         </div>
+        
+        <button class="round-btn" id="addCatBtn">Добавить котика</button>
+        
+        <div class="upload-container" id="uploadContainer">
+            <label for="catFileInput" class="file-label">Выберите изображение котика</label>
+            <input type="file" id="catFileInput" class="file-input" accept="image/*">
+            <img id="catImagePreview" class="preview-image" style="display: none;">
+            <button class="round-btn" id="uploadCatBtn" style="display: none;">Загрузить котика</button>
+        </div>
+        
         <div class="cont">
             <p>Котики пиздец какие милые они прям супер мили, а еще если вам нуна пародия на котика то это джони</p>
         </div>
     </div>
+
+    <script>
+        function setupUpload(btnId, containerId, fileInputId, previewId, uploadBtnId, addBtnId) {
+            const addBtn = document.getElementById(addBtnId);
+            const uploadContainer = document.getElementById(containerId);
+            const fileInput = document.getElementById(fileInputId);
+            const imagePreview = document.getElementById(previewId);
+            const uploadBtn = document.getElementById(uploadBtnId);
+            const imagesContainer = document.getElementById(btnId === 'addCatBtn' ? 'catsContainer' : 'sealsContainer');
+            
+            addBtn.addEventListener('click', function() {
+                this.style.transform = 'translateY(2px)';
+                this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                
+                uploadContainer.style.display = 'block';
+                addBtn.style.display = 'none';
+                
+                setTimeout(() => {
+                    this.style.transform = '';
+                    this.style.boxShadow = '';
+                }, 200);
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        imagePreview.src = event.target.result;
+                        imagePreview.style.display = 'block';
+                        uploadBtn.style.display = 'block';
+                    }
+                    
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            uploadBtn.addEventListener('click', function() {
+                if (!fileInput.files[0]) {
+                    alert('выбери изображение');
+                    return;
+                }
+                
+                this.textContent = 'ща ща ща';
+                this.disabled = true;
+
+                setTimeout(() => {
+                    const newImage = document.createElement('img');
+                    newImage.className = 'animal-image';
+                    newImage.src = imagePreview.src;
+                    newImage.alt = btnId === 'addCatBtn' ? 'Новый котик' : 'Новый тюленчик';
+                    newImage.draggable = true;
+                    setupDragAndDrop(newImage);
+                    
+                    imagesContainer.appendChild(newImage);
+                    
+                    fileInput.value = '';
+                    imagePreview.style.display = 'none';
+                    uploadBtn.style.display = 'none';
+                    uploadBtn.textContent = btnId === 'addCatBtn' ? 'Загрузить котика' : 'Загрузить тюленчика';
+                    uploadBtn.disabled = false;
+                    uploadContainer.style.display = 'none';
+                    addBtn.style.display = 'block';
+                    
+                    alert(btnId === 'addCatBtn' ? 'Котик добавлен' : 'Тюленчик добавлен');
+                }, 1000);
+            });
+        }
+
+        // Функция для настройки перетаскивания
+        function setupDragAndDrop(element) {
+            element.addEventListener('dragstart', function(e) {
+                this.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', this.src);
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            element.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+            });
+        }
+        function setupContainer(containerId) {
+            const container = document.getElementById(containerId);
+            
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const draggingItem = document.querySelector('.dragging');
+                if (!draggingItem) return;
+                
+                const afterElement = getDragAfterElement(container, e.clientX, e.clientY);
+                if (afterElement) {
+                    container.insertBefore(draggingItem, afterElement);
+                } else {
+                    container.appendChild(draggingItem);
+                }
+            });
+            
+            container.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                this.classList.add('drop-indicator');
+            });
+            
+            container.addEventListener('dragleave', function() {
+                this.classList.remove('drop-indicator');
+            });
+            
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drop-indicator');
+            });
+        }
+        function getDragAfterElement(container, x, y) {
+            const draggableElements = [...container.querySelectorAll('.animal-image:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offsetX = x - box.left - box.width / 2;
+                const offsetY = y - box.top - box.height / 2;
+                const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+                
+                if (distance < 100) {
+                    return { element: child, distance: distance };
+                } else {
+                    return closest;
+                }
+            }, { element: null, distance: Number.POSITIVE_INFINITY }).element;
+        }
+
+        setupUpload(
+            'addCatBtn',
+            'uploadContainer',
+            'catFileInput',
+            'catImagePreview',
+            'uploadCatBtn',
+            'addCatBtn'
+        );
+        setupUpload(
+            'addSealBtn',
+            'sealUploadContainer',
+            'sealFileInput',
+            'sealImagePreview',
+            'uploadSealBtn',
+            'addSealBtn'
+        );
+
+        document.querySelectorAll('.animal-image').forEach(img => {
+            setupDragAndDrop(img);
+        });
+        setupContainer('catsContainer');
+        setupContainer('sealsContainer');
+    </script>
 </body>
 </html>
